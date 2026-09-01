@@ -1,0 +1,25 @@
+name: Transfer v0.3 fixed package
+
+on:
+  push:
+    branches:
+      - work/v0.4-update
+
+jobs:
+  transfer:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download v0.3 fixed release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir package
+          gh release download v0.3 \
+            --repo "$GITHUB_REPOSITORY" \
+            --pattern 'Ultima1Unity_Korean_v0.3_DeltaPatch_InstallerFixed.zip' \
+            --dir package
+      - name: Upload package as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: v03-fixed-package
+          path: package/Ultima1Unity_Korean_v0.3_DeltaPatch_InstallerFixed.zip
