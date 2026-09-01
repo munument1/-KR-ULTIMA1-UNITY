@@ -1,0 +1,85 @@
+name: Build and publish v0.4
+
+on:
+  push:
+    branches:
+      - work/v0.4-update
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/v0.4-update
+
+      - name: Download v0.3 fixed package
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rm -rf _v03 _download _v04_out
+          mkdir -p _v03 _download
+          gh release download v0.3 \
+            --repo "$GITHUB_REPOSITORY" \
+            --pattern 'Ultima1Unity_Korean_v0.3_DeltaPatch_InstallerFixed.zip' \
+            --dir _download
+          unzip -q _download/Ultima1Unity_Korean_v0.3_DeltaPatch_InstallerFixed.zip -d _v03
+
+      - name: Rebuild v0.4 package
+        run: python release_build/rebuild_v04.py
+
+      - name: Verify package contents
+        run: |
+          unzip -t Ultima1Unity_Korean_v0.4_DeltaPatch.zip
+          cat SHA256SUMS.txt
+
+      - name: Write release notes
+        run: |
+          cat > RELEASE_NOTES.md <<'EOF'
+          Ultima I Unity 최신 업데이트 빌드 대응 한국어 패치입니다.
+
+          주요 변경
+          - 최신 `Ultima.Runtime.dll` / `resources.assets` 호환 대응
+          - 기존 v0.3 DLL 번역 1,363개 이식
+          - 업데이트로 추가·변경된 UI 문구 24개 추가 한국어화
+          - 마우스/스크롤 조작 안내 문구 한국어화
+          - `Screen Filter`, `Facing Flip` 신규 설정 문구 한국어화
+          - Galmuri11 한글 폰트 적용 유지
+          - 도시·성·던전·상점·아이템 JSON 번역 유지
+          - `Hits:`는 `체력:` 번역 유지
+          - v0.4 전용 `.u1k-original-v0.4` 백업 사용
+
+          설치 방법
+          1. 최신 Ultima I Unity를 깨끗한 상태로 준비합니다.
+          2. `Ultima1Unity_Korean_v0.4_DeltaPatch.zip`의 내용을 `Ultima I Unity.exe`가 있는 폴더에 풉니다.
+          3. `Install_Korean_Patch.bat`를 실행합니다.
+          4. 설치기가 원본 SHA-256을 검증한 뒤 자동 백업 및 패치를 적용합니다.
+
+          ※ Python 설치는 필요하지 않습니다.
+          ※ v0.3은 최신 게임 DLL과 호환되지 않으므로 최신 빌드에는 v0.4를 사용하세요.
+          ※ 원본 게임 파일은 포함하지 않습니다.
+          EOF
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view v0.4 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release edit v0.4 \
+              --repo "$GITHUB_REPOSITORY" \
+              --title 'Ultima I Unity 한국어 패치 v0.4' \
+              --notes-file RELEASE_NOTES.md
+            gh release upload v0.4 \
+              Ultima1Unity_Korean_v0.4_DeltaPatch.zip SHA256SUMS.txt \
+              --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create v0.4 \
+              Ultima1Unity_Korean_v0.4_DeltaPatch.zip SHA256SUMS.txt \
+              --repo "$GITHUB_REPOSITORY" \
+              --target main \
+              --title 'Ultima I Unity 한국어 패치 v0.4' \
+              --notes-file RELEASE_NOTES.md
+          fi
