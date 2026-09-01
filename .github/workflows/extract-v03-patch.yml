@@ -1,0 +1,36 @@
+name: Extract v0.3 patch data
+
+on:
+  push:
+    branches:
+      - work/v0.4-update
+
+permissions:
+  contents: write
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/v0.4-update
+      - name: Download fixed v0.3 release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rm -rf recovered_v03
+          mkdir -p recovered_v03
+          gh release download v0.3 \
+            --repo "$GITHUB_REPOSITORY" \
+            --pattern 'Ultima1Unity_Korean_v0.3_DeltaPatch_InstallerFixed.zip' \
+            --dir recovered_v03
+          unzip -o recovered_v03/Ultima1Unity_Korean_v0.3_DeltaPatch_InstallerFixed.zip -d recovered_v03/extracted
+          rm recovered_v03/Ultima1Unity_Korean_v0.3_DeltaPatch_InstallerFixed.zip
+      - name: Commit recovered patch data
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add recovered_v03
+          git commit -m 'Recover v0.3 fixed patch data' || exit 0
+          git push origin HEAD:work/v0.4-update
