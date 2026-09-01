@@ -2,7 +2,7 @@
 
 Ultima I Unity의 비공식 한국어 패치입니다.
 
-현재 테스트 버전은 **v0.3**입니다.
+현재 테스트 버전은 **v0.4**입니다.
 
 ## 현재 적용 범위
 
@@ -12,6 +12,8 @@ Ultima I Unity의 비공식 한국어 패치입니다.
 - **Galmuri11** 기반 한글 폰트 적용
 - 메인 화면 한국어 문구 겹침 수정
 - HUD의 `Hits`를 `체력`으로 수정
+- 최신 업데이트에서 추가된 마우스/스크롤 조작 안내 문구 한국어화
+- `Screen Filter`, `Facing Flip` 등 신규 설정 문구 한국어화
 
 ## 현재 알려진 제한
 
@@ -21,14 +23,14 @@ Ultima I Unity의 비공식 한국어 패치입니다.
 
 ## 설치
 
-1. 아래 `release/Ultima1Unity_Korean_v0.3_DeltaPatch.zip`을 받습니다.
+1. GitHub Releases에서 `Ultima1Unity_Korean_v0.4_DeltaPatch.zip`을 받습니다.
 2. 압축 안의 파일을 `Ultima I Unity.exe`가 있는 게임 폴더에 풉니다.
 3. `Install_Korean_Patch.bat`를 실행합니다.
 4. 설치기가 원본 파일의 SHA-256을 확인한 뒤 자동으로 백업하고 패치를 적용합니다.
 
 패치는 원본 게임 파일 전체를 포함하지 않고 **변경 데이터만 포함하는 델타 패치**입니다. 지원하는 게임 빌드와 파일 해시가 다르면 설치가 중단됩니다.
 
-원본 백업은 각 파일 옆에 `.u1k-original` 확장자로 생성됩니다.
+v0.4 원본 백업은 각 파일 옆에 `.u1k-original-v0.4` 확장자로 생성됩니다.
 
 ## 폰트
 
@@ -37,6 +39,17 @@ Ultima I Unity의 비공식 한국어 패치입니다.
 Galmuri는 SIL Open Font License 1.1에 따라 배포됩니다. 자세한 내용은 `LICENSE_Galmuri.txt`를 확인하세요.
 
 ## 버전
+
+### v0.4
+
+- 최신 Ultima I Unity 업데이트 빌드 호환 대응
+- 기존 v0.3 DLL 번역 1,363개 이식
+- 업데이트로 추가·변경된 UI 문구 24개 추가 한국어화
+- 마우스/스크롤 조작 안내 문구 한국어화
+- 신규 설정 `Screen Filter`, `Facing Flip` 한국어화
+- Galmuri11 한글 폰트 적용 유지
+- 도시·성·던전·상점·아이템 JSON 번역 유지
+- v0.4 전용 원본 백업 파일 사용
 
 ### v0.3
 
