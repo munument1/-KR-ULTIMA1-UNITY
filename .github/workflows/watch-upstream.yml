@@ -1,0 +1,75 @@
+name: Watch Ultima I Unity upstream
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '15 21 * * *'
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect current itch.io upload
+        id: detect
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL -A 'Mozilla/5.0' 'https://archiveofmyth.itch.io/ultima-unity' -o itch-page.html
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, re
+          from pathlib import Path
+
+          html = Path('itch-page.html').read_text(encoding='utf-8', errors='replace')
+          state = json.loads(Path('release_build/upstream_state.json').read_text(encoding='utf-8'))
+
+          m = re.search(
+              r'data-upload_id="(\d+)"[^>]*>Download</a>.*?title="Ultima I Unity\.zip"',
+              html,
+              re.S,
+          )
+          if not m:
+              raise SystemExit('Could not find Ultima I Unity.zip upload id on itch.io page')
+
+          upload_id = m.group(1)
+          changed = str(upload_id) != str(state['upload_id'])
+          print(f'upload_id={upload_id}')
+          print(f'previous_upload_id={state["upload_id"]}')
+          print(f'changed={str(changed).lower()}')
+          PY
+
+      - name: Report unchanged upstream
+        if: steps.detect.outputs.changed != 'true'
+        run: echo "No upstream update detected. Upload ${{ steps.detect.outputs.upload_id }} is still current."
+
+      - name: Open update issue
+        if: steps.detect.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NEW_ID: ${{ steps.detect.outputs.upload_id }}
+          OLD_ID: ${{ steps.detect.outputs.previous_upload_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TITLE="Upstream Ultima I Unity update detected: upload ${NEW_ID}"
+          if gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "${TITLE} in:title" --json title --jq '.[].title' | grep -Fxq "$TITLE"; then
+            echo "Issue already exists: $TITLE"
+            exit 0
+          fi
+          cat > /tmp/body.md <<EOF
+          Ultima I Unity 원본 업데이트가 감지되었습니다.
+
+          - 이전 upload ID: \`${OLD_ID}\`
+          - 새 upload ID: \`${NEW_ID}\`
+          - 원본 페이지: https://archiveofmyth.itch.io/ultima-unity
+
+          다음 단계는 최신 원본을 내려받아 \`Ultima.Runtime.dll\` / \`resources.assets\` 해시를 확인하고, 자동 포팅 검증을 통과한 경우에만 한국어 패치를 재생성하는 것입니다.
+
+          안전장치: 바이너리 구조 변경, 번역 이식 누락, 패치 후 해시 불일치가 발생하면 자동 릴리즈하지 않습니다.
+          EOF
+          gh issue create --repo "$GITHUB_REPOSITORY" --title "$TITLE" --body-file /tmp/body.md
