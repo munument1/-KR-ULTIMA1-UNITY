@@ -1,0 +1,5 @@
+Install_Korean_Patch.bat
+Install_Korean_Patch.ps1
+LICENSE_Galmuri.txt
+README_KO.txt
+patch_data.json
