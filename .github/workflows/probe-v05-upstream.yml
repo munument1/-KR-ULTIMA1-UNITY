@@ -14,32 +14,28 @@ jobs:
   probe:
     runs-on: ubuntu-latest
     steps:
-      - name: Inspect itch.io download endpoint
+      - name: Inspect itch.io download JavaScript
         shell: bash
         run: |
           set -euo pipefail
           PAGE='https://archiveofmyth.itch.io/ultima-unity'
           curl -fsSL -A 'Mozilla/5.0' "$PAGE" -o itch-page.html
-          UPLOAD_ID=$(python - <<'PY'
+          SCRIPT=$(python - <<'PY'
           import re
           s=open('itch-page.html',encoding='utf-8').read()
-          m=re.search(r'data-upload_id="(\d+)"[^>]*>Download</a>.*?title="Ultima I Unity\.zip"',s,re.S)
-          print(m.group(1) if m else '')
+          xs=re.findall(r'<script[^>]+src="([^"]+)"',s)
+          print(next(x for x in xs if 'game.min.js' in x))
           PY
           )
-          echo "UPLOAD_ID=$UPLOAD_ID"
-          test -n "$UPLOAD_ID"
-          for u in \
-            "$PAGE/file/$UPLOAD_ID" \
-            "$PAGE/download/$UPLOAD_ID" \
-            "https://itch.io/uploads/$UPLOAD_ID/download" \
-            "https://api.itch.io/uploads/$UPLOAD_ID/download"; do
-            echo "=== $u ==="
-            curl -sSIL --max-redirs 5 -A 'Mozilla/5.0' "$u" | sed -n '1,30p' || true
-          done
-          echo '=== scripts ==='
+          echo "SCRIPT=$SCRIPT"
+          curl -fsSL -A 'Mozilla/5.0' "$SCRIPT" -o game.min.js
           python - <<'PY'
           import re
-          s=open('itch-page.html',encoding='utf-8').read()
-          for x in re.findall(r'<script[^>]+src="([^"]+)"',s): print(x)
+          s=open('game.min.js',encoding='utf-8',errors='replace').read()
+          print('JS_BYTES',len(s.encode()))
+          for term in ['upload_id','download_btn','DownloadPopup','download_url','/file/','uploads/']:
+              print('\n===',term,'===')
+              hits=list(re.finditer(re.escape(term),s,re.I))
+              print('COUNT',len(hits))
+              for m in hits[:15]: print(s[max(0,m.start()-500):m.end()+800])
           PY
