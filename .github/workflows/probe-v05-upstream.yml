@@ -1,0 +1,40 @@
+name: Probe v0.5 upstream
+
+on:
+  push:
+    branches:
+      - work/v0.5-update
+    paths:
+      - .github/workflows/probe-v05-upstream.yml
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inspect itch.io download metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import re, urllib.request
+          url='https://archiveofmyth.itch.io/ultima-unity'
+          req=urllib.request.Request(url, headers={'User-Agent':'Mozilla/5.0'})
+          html=urllib.request.urlopen(req, timeout=30).read().decode('utf-8','replace')
+          print('HTML_BYTES', len(html.encode()))
+          print('HAS_FILENAME', 'Ultima I Unity.zip' in html)
+          for pat in [r'data-upload_id="[^"]+"', r'upload_id[^,}\n<]{0,100}', r'https?://[^"\' ]+\.zip[^"\' ]*']:
+              vals=[]
+              for m in re.finditer(pat, html, re.I):
+                  v=m.group(0)
+                  if v not in vals: vals.append(v)
+              print('PATTERN', pat, 'COUNT', len(vals))
+              for v in vals[:20]: print(v)
+          idx=html.find('Ultima I Unity.zip')
+          if idx >= 0:
+              print('--- FILENAME CONTEXT ---')
+              print(html[max(0,idx-2500):idx+2500])
+          open('itch-page.html','w',encoding='utf-8').write(html)
+          PY
