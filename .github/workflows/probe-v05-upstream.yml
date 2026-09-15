@@ -1,4 +1,4 @@
-name: Probe v0.5 upstream
+name: Probe archived v0.4 upstream
 
 on:
   push:
@@ -6,6 +6,7 @@ on:
       - work/v0.5-update
     paths:
       - .github/workflows/probe-v05-upstream.yml
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -14,67 +15,27 @@ jobs:
   probe:
     runs-on: ubuntu-latest
     steps:
-      - name: Download latest public Ultima I Unity build
+      - name: Query Wayback history
         shell: bash
         run: |
           set -euo pipefail
-          python -m pip install -q selenium
+          URL='https://web.archive.org/cdx/search/cdx?url=archiveofmyth.itch.io%2Fultima-unity&from=20260820&to=20260912&output=json&fl=timestamp%2Coriginal%2Cstatuscode%2Cdigest&filter=statuscode%3A200&collapse=digest'
+          curl -fsSL -A 'Mozilla/5.0' "$URL" -o cdx.json
+          cat cdx.json
           python - <<'PY'
-          import os, time, pathlib
-          from selenium import webdriver
-          from selenium.webdriver.common.by import By
-          from selenium.webdriver.chrome.options import Options
-          out=pathlib.Path.cwd()/"upstream-download"
-          out.mkdir(exist_ok=True)
-          opts=Options()
-          opts.add_argument('--headless=new')
-          opts.add_argument('--no-sandbox')
-          opts.add_argument('--disable-dev-shm-usage')
-          opts.add_experimental_option('prefs', {
-              'download.default_directory': str(out),
-              'download.prompt_for_download': False,
-              'download.directory_upgrade': True,
-              'safebrowsing.enabled': True,
-          })
-          d=webdriver.Chrome(options=opts)
-          try:
-              d.get('https://archiveofmyth.itch.io/ultima-unity')
-              btn=d.find_element(By.CSS_SELECTOR, 'a.download_btn[data-upload_id="19228780"]')
-              print('UPLOAD_ID', btn.get_attribute('data-upload_id'))
-              btn.click()
-              deadline=time.time()+600
-              last=(-1,0)
-              while time.time()<deadline:
-                  files=list(out.iterdir())
-                  partial=[p for p in files if p.suffix in ('.crdownload','.tmp')]
-                  zips=[p for p in files if p.suffix.lower()=='.zip']
-                  if zips and not partial:
-                      z=zips[0]
-                      sz=z.stat().st_size
-                      if last[0]==sz:
-                          last=(sz,last[1]+1)
-                      else:
-                          last=(sz,0)
-                      if last[1]>=2:
-                          print('DOWNLOADED', z.name, sz)
-                          break
-                  time.sleep(2)
-              else:
-                  raise SystemExit('download timeout')
-          finally:
-              d.quit()
+          import json, subprocess, re
+          rows=json.load(open('cdx.json',encoding='utf-8'))
+          for row in rows[1:]:
+              ts=row[0]
+              snap=f'https://web.archive.org/web/{ts}id_/https://archiveofmyth.itch.io/ultima-unity'
+              p=subprocess.run(['curl','-fsSL','-A','Mozilla/5.0',snap],capture_output=True,text=True)
+              if p.returncode:
+                  print('ERR',ts,p.returncode)
+                  continue
+              html=p.stdout
+              ids=[]
+              for m in re.finditer(r'data-upload_id="(\d+)"',html):
+                  if m.group(1) not in ids:
+                      ids.append(m.group(1))
+              print('SNAP',ts,'UPLOAD_IDS',ids,'BYTES',len(html.encode()))
           PY
-      - name: Inspect important upstream files
-        shell: bash
-        run: |
-          set -euo pipefail
-          ZIP=$(find upstream-download -maxdepth 1 -name '*.zip' -print -quit)
-          mkdir unpack
-          unzip -q "$ZIP" -d unpack
-          DLL=$(find unpack -path '*/Ultima I Unity_Data/Managed/Ultima.Runtime.dll' -print -quit)
-          RES=$(find unpack -path '*/Ultima I Unity_Data/resources.assets' -print -quit)
-          echo "DLL=$DLL"
-          echo "RES=$RES"
-          sha256sum "$DLL" "$RES"
-          stat -c '%s %n' "$DLL" "$RES"
-          find unpack -type f -name '*.json' -print | sort | head -100
