@@ -4,6 +4,12 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '15 21 * * *'
+  push:
+    branches:
+      - work/v0.5-update
+    paths:
+      - .github/workflows/watch-upstream.yml
+      - release_build/upstream_state.json
 
 permissions:
   contents: read
