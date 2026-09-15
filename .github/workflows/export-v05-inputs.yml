@@ -1,0 +1,33 @@
+name: Export v0.5 migration inputs
+
+on:
+  push:
+    branches:
+      - work/v0.5-update
+    paths:
+      - '.github/workflows/export-v05-inputs.yml'
+  workflow_dispatch:
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Collect migration inputs
+        run: |
+          set -euxo pipefail
+          mkdir -p export/release_build export/recovered_v03/extracted export/release
+          cp release_build/v04_transform.json export/release_build/
+          cp release_build/rebuild_v04.py export/release_build/
+          cp release_build/upstream_state.json export/release_build/ || true
+          cp recovered_v03/extracted/patch_data.json export/recovered_v03/extracted/
+          cp -a recovered_v03/extracted/* export/recovered_v03/extracted/ || true
+          cp -a release/* export/release/ || true
+          find export -type f -maxdepth 5 -print
+      - name: Upload migration inputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: v05-migration-inputs
+          path: export
+          if-no-files-found: error
+          retention-days: 3
