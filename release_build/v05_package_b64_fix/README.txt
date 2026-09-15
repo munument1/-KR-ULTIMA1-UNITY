@@ -1,0 +1,1 @@
+v0.5 release reconstruction support files. The release workflow uses only SHA-verified chunks and restores two known 32-character Base64 transport omissions before validating the final package SHA-256.
