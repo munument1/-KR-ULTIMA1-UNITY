@@ -1,0 +1,19 @@
+{
+  "version": "0.5",
+  "target_build": "2026-09-13",
+  "upstream_upload_id": "19228780",
+  "package": "Ultima1Unity_Korean_v0.5_DeltaPatch.zip",
+  "package_sha256": "358a9f7c99ba8214b2f60dc8e74f81578afb65517550e9689e4cfa03c556f2c1",
+  "ultima_runtime": {
+    "original_sha256": "d08f5bb3e02c0ecdab37d4c99200984a8a1979d0be6c5a835f9e2b4449fa6852",
+    "patched_sha256": "b332aadfc73b3139ec41fa4fe0ecfba9f0887ce7b9ac318453e15eba1c3bf6e7",
+    "patches": 504,
+    "ported_korean_strings": 1332,
+    "font_references": 209
+  },
+  "resources_assets": {
+    "original_sha256": "472e002b9fd4e1479614a54ea64e70cebfe5cb5e0f3b67aa1368abdc259c3f49",
+    "patched_sha256": "2f3d5ec2fdead02842b11b1b0d95fefa5dce00075b29e2cbabbe1d11136c0da4",
+    "patches": 2
+  }
+}
